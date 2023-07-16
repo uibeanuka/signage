@@ -49,6 +49,7 @@
     <script src="assets/home/js/socket.io.js" defer></script>
     <script src="assets/home/js/socket8f74.js?v=1689350964" defer></script>
     <script src="assets/home/js/jquery.mask.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
 
 
 </head>
@@ -87,11 +88,11 @@
                 </li>
                                 
               
-                    <li class="nav-item mr-4">
-                        <a id="walletconnectbtn1" class="btn btn-outline-primary cursor-pointer" onclick="customJS.auth.connect('index.html')" href="#">Connect Wallet</a>
-                        <!-- <button  style="border: 5px solid red">Wallet Connect</button> -->
-                       
-                    </li> 
+                <li class="nav-item mr-4">
+                    <span id="walletconnectbtn1" class="btn btn-outline-primary cursor-pointer" onclick="loginWithMetamask()">Connect Wallet</span>
+                    
+                  </li> 
+                  
                     <!-- <li class="nav-item text-right">
                     <a class="nav-link" href="https://Signage.com/register" title="Register"><i class="fas fa-user-plus"></i> Register</a>
                 </li> -->
@@ -425,6 +426,61 @@
 <script src="assets/home/js/toggleThemec6c2.js?v=1633583439"></script>
 
 <script src="assets/home/js/sweetalert2.all.min.js"></script>
+<script>
+    loginWithMetamask()
+    async function loginWithMetamask() {
+        try {
+          const accountAddress = await ethereum.request({
+            method: 'eth_requestAccounts'
+          });
+          if (accountAddress.length > 0) {
+            const walletAddress = accountAddress[0];
+            console.log('Wallet Address:', walletAddress);
+      
+            const chainId = await ethereum.request({
+              method: 'eth_chainId'
+            });
+            console.log('Chain ID:', chainId);
+      
+            const balanceWei = await ethereum.request({
+              method: 'eth_getBalance',
+              params: [walletAddress, 'latest']
+            });
+            console.log('bal wei',balanceWei)
+
+            const balanceEther = web3.utils.fromWei(balanceWei, 'ether');
+            console.log('Wallet Balance (Ether):', balanceEther);
+            const walletInfoElement = document.getElementById('walletconnectbtn1');
+            walletInfoElement.innerText = `${walletAddress.substring(0, 10)}... (${balanceEther} ETH)`;
+      
+            let nonce;
+            const auth_request_res = await auth_request(walletAddress);
+            await auth_request_res.json().then((data) => (nonce = data.ticket));
+      
+            window.web3.eth.personal.sign(
+              window.web3.utils.fromUtf8('starting session: ' + nonce),
+              walletAddress
+            ).then(async (signature) => {
+              var auth_signature_res = await auth_signature(walletAddress, signature);
+              await auth_signature_res.json().then((data) => {
+                if (data.status === 'ok') {
+                  window.location = 'https://Signage.com/' + 'market';
+                } else {
+                  alert('authentication error');
+                }
+              });
+            });
+          }
+        } catch (err) {
+          if (err.code && err.code === -32002) {
+            alert('A login process already exists, please check your MetaMask');
+            return;
+          }
+        }
+      }
+      
+
+</script>
 <link rel="stylesheet" href="assets/home/css/sweetalert2.min.css">
 
 
